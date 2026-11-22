@@ -1,59 +1,38 @@
+-- MV1 (Ananya): five tables, primary keys, foreign keys, UNIQUE(show_id, seat_id)
+PRAGMA foreign_keys = ON;
 
-drop table if exists bookings;
-drop table if exists shows;
-drop table if exists seats;
-drop table if exists users;
-drop table if exists movies;
-
-
-create table movies (
-    movie_id integer primary key autoincrement,
-    title text not null,
-    duration_min integer,
-    genre text
+CREATE TABLE Movies (
+    movie_id     INTEGER PRIMARY KEY,
+    title        TEXT    NOT NULL,
+    duration_min INTEGER NOT NULL CHECK (duration_min > 0)
 );
 
-
-
-create table users (
-    user_id integer primary key autoincrement,
-    name text not null,
-    email text not null unique
+CREATE TABLE Shows (
+    show_id   INTEGER PRIMARY KEY,
+    movie_id  INTEGER NOT NULL REFERENCES Movies(movie_id),
+    show_time TEXT    NOT NULL            -- 'YYYY-MM-DD HH:MM'
 );
 
-
-create table seats (
-    seat_id integer primary key autoincrement,
-    row_label text not null,
-    seat_number integer not null,
-
-    unique (row_label, seat_number)
+-- One hall: the same seat grid is used by every show.
+CREATE TABLE Seats (
+    seat_id     INTEGER PRIMARY KEY,
+    row_label   TEXT    NOT NULL,         -- 'A', 'B', ...
+    seat_number INTEGER NOT NULL,         -- 1, 2, ...
+    UNIQUE (row_label, seat_number)
 );
 
-
-create table shows (
-    show_id integer primary key autoincrement,
-    movie_id integer not null,
-    show_date text not null,
-    show_time text not null,
-
-    foreign key (movie_id) references movies(movie_id)
+CREATE TABLE Users (
+    user_id INTEGER PRIMARY KEY,
+    name    TEXT NOT NULL,
+    email   TEXT NOT NULL UNIQUE
 );
 
-
-create table bookings (
-    booking_id integer primary key autoincrement,
-    user_id integer not null,
-    show_id integer not null,
-    seat_id integer not null,
-    booking_date text not null default current_timestamp,
-
-    foreign key (user_id) references users(user_id),
-    foreign key (show_id) references shows(show_id),
-    foreign key (seat_id) references seats(seat_id),
-
-    unique (show_id, seat_id)
+CREATE TABLE Bookings (
+    booking_id INTEGER PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES Users(user_id),
+    show_id    INTEGER NOT NULL REFERENCES Shows(show_id),
+    seat_id    INTEGER NOT NULL REFERENCES Seats(seat_id),
+    booked_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- M2: the same seat can never be saved twice for the same show
+    UNIQUE (show_id, seat_id)
 );
-
-
-
