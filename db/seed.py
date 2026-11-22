@@ -1,94 +1,75 @@
+"""MV1 (Ananya): create the database from schema.sql and fill it with sample data.
 
-import sqlite3
+Run from the repo root:   python db/seed.py
+WARNING: this deletes and rebuilds the database file.
+"""
 import os
+import sqlite3
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from src.db import get_db_path  # noqa: E402
+
+SCHEMA_FILE = os.path.join(ROOT, "db", "schema.sql")
+
+MOVIES = [
+    (1, "Interstellar", 169),
+    (2, "Inception", 148),
+    (3, "The Lion King", 88),
+]
+
+SHOWS = [  # (show_id, movie_id, show_time)
+    (1, 1, "2026-12-01 10:00"),
+    (2, 1, "2026-12-01 18:00"),
+    (3, 2, "2026-12-01 14:00"),
+    (4, 2, "2026-12-02 20:00"),
+    (5, 3, "2026-12-02 11:00"),
+]
+
+USERS = [
+    (1, "Aarav", "aarav@example.com"),
+    (2, "Diya", "diya@example.com"),
+    (3, "Rohan", "rohan@example.com"),
+    (4, "Meera", "meera@example.com"),
+    (5, "Kabir", "kabir@example.com"),
+]
+
+ROWS = "ABCDE"      # 5 rows
+SEATS_PER_ROW = 8   # x 8 seats = 40 seats
 
 
-def main():
+def seed(db_path=None):
+    """Rebuild the database at db_path (default: the normal database file)."""
+    db_path = db_path or get_db_path()
+    if os.path.exists(db_path):
+        os.remove(db_path)
 
-    # 1. get folder path
-    base_dir = os.path.dirname(__file__)
-
-    # 2. create file paths
-    schema_path = os.path.join(base_dir, "schema.sql")
-    db_path = os.path.join(base_dir, "movie.db")
-
-    # 3. connect to database
     conn = sqlite3.connect(db_path)
+    with open(SCHEMA_FILE, encoding="utf-8") as f:
+        conn.executescript(f.read())
 
-    # enable foreign keys
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn.executemany("INSERT INTO Movies VALUES (?, ?, ?)", MOVIES)
+    conn.executemany("INSERT INTO Shows VALUES (?, ?, ?)", SHOWS)
+    conn.executemany("INSERT INTO Users VALUES (?, ?, ?)", USERS)
 
-    cur = conn.cursor()
+    seat_id = 1
+    for row in ROWS:
+        for number in range(1, SEATS_PER_ROW + 1):
+            conn.execute(
+                "INSERT INTO Seats (seat_id, row_label, seat_number) VALUES (?, ?, ?)",
+                (seat_id, row, number),
+            )
+            seat_id += 1
 
-    # 4. read and execute schema
-    with open(schema_path, "r") as file:
-        sql = file.read()
-
-    conn.executescript(sql)
-
-    # 5. insert movies
-    movies = [
-        ("3 Idiots", 170, "Comedy"),
-        ("Dangal", 161, "Drama"),
-        ("Chhichhore", 143, "Comedy")
-    ]
-
-    cur.executemany(
-        "INSERT INTO movies (title, duration_min, genre) VALUES (?, ?, ?)",
-        movies
-    )
-
-    # 6. insert users
-    users = [
-        ("Ananya", "ananya@gmail.com"),
-        ("Rahul", "rahul@gmail.com"),
-        ("Priya", "priya@gmail.com"),
-        ("Aman", "aman@gmail.com"),
-        ("Sneha", "sneha@gmail.com")
-    ]
-
-    cur.executemany(
-        "INSERT INTO users (name, email) VALUES (?, ?)",
-        users
-    )
-
-    # 7. insert shows
-    shows = [
-        (1, "2026-11-13", "10:00"),
-        (1, "2026-11-13", "18:00"),
-        (2, "2026-11-14", "12:00"),
-        (2, "2026-11-14", "19:00"),
-        (3, "2026-11-15", "15:00")
-    ]
-
-    cur.executemany(
-        "INSERT INTO shows (movie_id, show_date, show_time) VALUES (?, ?, ?)",
-        shows
-    )
-
-    # 8. insert 40 seats
-    seats = []
-
-    for row in "ABCDE":
-        for num in range(1, 9):
-            seats.append((row, num))
-
-    cur.executemany(
-        "INSERT INTO seats (row_label, seat_number) VALUES (?, ?)",
-        seats
-    )
-
-    # 9. finish
     conn.commit()
-
-    print("Database ready!")
-    print("3 movies inserted")
-    print("5 users inserted")
-    print("5 shows inserted")
-    print("40 seats inserted")
-
     conn.close()
+    return db_path
 
 
 if __name__ == "__main__":
-    main()
+    path = seed()
+    print(f"Database created at {path}")
+    print(f"{len(MOVIES)} movies, {len(SHOWS)} shows, "
+          f"{len(ROWS) * SEATS_PER_ROW} seats, {len(USERS)} users.")
