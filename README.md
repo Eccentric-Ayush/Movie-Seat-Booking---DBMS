@@ -1,7 +1,8 @@
 # Movie Seat Booking (DBMS project)
 
-A small terminal app, built on Python + SQLite, that shows how **transactions, keys and
-constraints** stop two people from booking the same seat.
+A small Python + SQLite app with both a terminal menu and a Tkinter desktop interface.
+It demonstrates how **transactions, keys and constraints** stop two people from booking
+the same seat.
 
 **Standout demo:** two terminals try to book the same seat at the same moment.
 With protection exactly one wins. Without protection both "win" (the bug).
@@ -23,14 +24,20 @@ Five tables: `Movies`, `Shows`, `Seats`, `Users`, `Bookings`.
 
 ## How to run
 
-Needs Python 3.8+ only (SQLite is built in, nothing to install).
+Needs Python 3.8+ and SQLite (included with Python). The desktop app also needs Tkinter;
+on Debian/Ubuntu, install it with `sudo apt install python3-tk` if it is missing.
 Run every command from the repo root.
 
 ```bash
-python db/seed.py            # create movie.db with sample data (re-run to reset)
-python app/cli.py            # the terminal menu
-python tests/test_booking.py # basic tests (also works with: pytest tests)
+python3 db/seed.py         # create movie.db with sample data (re-run to reset)
+python3 app/cli.py         # start the terminal menu
+python3 app/tkinter_app.py # start the desktop app
 ```
+
+The desktop app lets you choose a user and show, view/select available seats, book
+seats, and review or cancel your bookings. Available seats are green; booked seats are
+red and disabled. The database is created with sample data on first launch if it does
+not already exist. To reset it, run `python3 db/seed.py`.
 
 ### The race test (two terminals)
 
@@ -67,10 +74,9 @@ Shortcut for one terminal: add `--auto` (it starts both users itself).
 | `src/booking.py` | MV2 | `book_seat()` and `cancel_booking()` with BEGIN / COMMIT / ROLLBACK |
 | `src/queries.py` | MV5 | `list_shows()`, `get_seat_map()`, `get_user_bookings()` |
 | `app/cli.py` | MV4 | Menu, show picker, seat map (O free, X booked) |
+| `app/tkinter_app.py` | UI | Minimal desktop interface for booking and managing seats |
 | `demo/race_test.py` | MV3 | Race test with protection |
 | `demo/race_no_protection.py` | MV3 | Same race without protection |
-| `tests/test_booking.py` | MV6 | Basic tests incl. an end-to-end flow |
-| `docs/viva.md` | MV6 | Ten likely viva questions with answers |
 
 ## Features covered (M1 to M7)
 
